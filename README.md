@@ -49,7 +49,7 @@ you need to use a different name, pass the `:name` option to the Index.
 
 ``` ruby
 def self.index
-  Oedipus::DataMapper::Index.new(self, name: posts_rt)
+  Oedipus::DataMapper::Index.new(self, name: :posts_rt)
 end
 ```
 
