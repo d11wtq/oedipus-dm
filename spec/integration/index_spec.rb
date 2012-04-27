@@ -112,6 +112,30 @@ describe Oedipus::DataMapper::Index do
           index.search("badgers", :views.lte => 7, order: :id).map(&:id).should == [@a.id, @c.id]
         end
       end
+
+      describe "Symbol.asc" do
+        it "is converted to Hash notation" do
+          index.search("badgers", order: :id.asc).map(&:id).should == [@a.id, @b.id, @c.id]
+        end
+
+        context "inside an array" do
+          it "is converted to Hash notation" do
+            index.search("badgers", order: [:id.asc]).map(&:id).should == [@a.id, @b.id, @c.id]
+          end
+        end
+      end
+
+      describe "Symbol.desc" do
+        it "is converted to Hash notation" do
+          index.search("badgers", order: :id.desc).map(&:id).should == [@c.id, @b.id, @a.id]
+        end
+
+        context "inside an array" do
+          it "is converted to Hash notation" do
+            index.search("badgers", order: [:id.desc]).map(&:id).should == [@c.id, @b.id, @a.id]
+          end
+        end
+      end
     end
   end
 end

@@ -69,7 +69,7 @@ module Oedipus
       # @option [Object] *
       #   all other options are taken to be attribute filters
       def search(*args)
-        result = connection[name].search(*convert(*args))
+        result = connection[name].search(*convert_filters(*args))
 
         records = result[:records].collect do |r|
           { "id" => r[:id] }
@@ -93,15 +93,41 @@ module Oedipus
 
       private
 
-      def convert(*args)
+      def convert_filters(*args)
         query, options = connection[name].send(:extract_query_data, args)
         [
           query,
           options.inject({}) { |o, (k, v)|
-            if ::DataMapper::Query::Operator === k
-              o.merge!(k.target => Oedipus.send(k.operator, v))
+            case k
+            when ::DataMapper::Query::Operator
+              case k.operator
+              when :not, :lt, :lte, :gt, :gte
+                o.merge!(k.target => Oedipus.send(k.operator, v))
+              else
+                raise ArgumentError, "Unsupported Sphinx filter operator #{k.operator}"
+              end
+            when :order
+              o.merge!(order: convert_order(v))
             else
               o.merge!(k => v)
+            end
+          }
+        ]
+      end
+
+      def convert_order(order)
+        Hash[
+          Array(order).map { |k, v|
+            case k
+            when ::DataMapper::Query::Operator
+              case k.operator
+              when :asc, :desc
+                [k.target, k.operator]
+              else
+                raise ArgumentError, "Unsupported Sphinx order operator #{k.operator}"
+              end
+            else
+              [k, v || :asc]
             end
           }
         ]
