@@ -12,6 +12,7 @@ require "dm-core"
 
 require "oedipus/data_mapper/version"
 require "oedipus/data_mapper/index"
+require "oedipus/data_mapper/collection"
 
 module Oedipus
   module DataMapper

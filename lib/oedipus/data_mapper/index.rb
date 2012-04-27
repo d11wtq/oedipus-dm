@@ -51,7 +51,7 @@ module Oedipus
       # @param [Hash] options
       #   options for filtering, sorting and range-limiting
       #
-      # @return [DataMapper::Collecton]
+      # @return [Collecton]
       #   a collection object containing the given resources
       #
       # @option [Array] attrs
@@ -69,7 +69,7 @@ module Oedipus
       # @option [Object] *
       #   all other options are taken to be attribute filters
       def search(*args)
-        result = connection[name].search(*args)
+        result = connection[name].search(*convert(*args))
 
         records = result[:records].collect do |r|
           { "id" => r[:id] }
@@ -78,11 +78,33 @@ module Oedipus
         query = ::DataMapper::Query.new(
           model.repository,
           model,
-          fields: [model.properties[:id]],
-          reload: false
+          fields:     [model.properties[:id]],
+          conditions: { id: records.map {|r| r["id"]} },
+          reload:     false
         )
 
-        ::DataMapper::Collection.new(query, model.load(records, query))
+        Collection.new(
+          query,
+          model.load(records, query),
+          total_found: result[:total_found],
+          count:       records.count
+        )
+      end
+
+      private
+
+      def convert(*args)
+        query, options = connection[name].send(:extract_query_data, args)
+        [
+          query,
+          options.inject({}) { |o, (k, v)|
+            if ::DataMapper::Query::Operator === k
+              o.merge!(k.target => Oedipus.send(k.operator, v))
+            else
+              o.merge!(k => v)
+            end
+          }
+        ]
       end
     end
   end

@@ -25,5 +25,6 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency "oedipus"
   gem.add_runtime_dependency "dm-core"
 
+  gem.add_development_dependency "rake"
   gem.add_development_dependency "rspec"
 end
