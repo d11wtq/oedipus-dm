@@ -133,8 +133,9 @@ end
 
 Since realtime indexes are updated whenever something changes on your models,
 you must also list the fulltext fields in the mappings for your index, so that
-they can be saved.  Note that fields are not returned in Sphinx search
-results, however.
+they can be saved.  Note that the fields are not returned in Sphinx search
+results, however; the will be lazy-loaded if you try to access them in the
+returned collection.
 
 ``` ruby
 Oedipus::DataMapper::Index.new(self) do |idx|
