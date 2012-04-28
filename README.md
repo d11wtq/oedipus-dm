@@ -100,9 +100,9 @@ end
 ```
 
 `Index#map` takes the name of the attribute in your index.  By default it will
-map `1:1` with a property of the same name in your model.  If the property
-name in your model differs from that in the index, so may specify that with
-the `:with` option, as you see with the `:views` attribute above.
+map 1:1 with a property of the same name in your model.  If the property name
+in your model differs from that in the index, you may specify that with the
+`:with` option, as you see with the `:views` attribute above.
 
 Now when Oedipus loads your search results, they will be loaded with `:id`,
 `:user_id` and `:view_count` pre-loaded.
@@ -116,7 +116,7 @@ value onto the resource.  To give a contrived example:
 
 ``` ruby
 Oedipus::DataMapper::Index.new(self) do |idx|
-  idx.map :2x_views, set: ->(r, v) { r.views = v/2 }
+  idx.map :x2_views, set: ->(r, v) { r.views = v/2 }
 end
 ```
 
@@ -125,7 +125,7 @@ retrieve the value from your resource, for inserting into the index.
 
 ``` ruby
 Oedipus::DataMapper::Index.new(self) do |idx|
-  idx.map :2x_views, set: ->(r, v) { r.views = v/2 }, get: ->(r) { r.view_count * 2 }
+  idx.map :x2_views, set: ->(r, v) { r.views = v/2 }, get: ->(r) { r.view_count * 2 }
 end
 ```
 
