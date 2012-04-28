@@ -21,7 +21,13 @@ describe Oedipus::DataMapper::Index do
   end
 
   let(:index) do
-    Oedipus::DataMapper::Index.new(Post, name: :posts_rt, connection: conn)
+    Oedipus::DataMapper::Index.new(Post, name: :posts_rt, connection: conn) do |idx|
+      idx.map :id
+      idx.map :title
+      idx.map :body
+      idx.map :user_id
+      idx.map :views, with: :view_count
+    end
   end
 
   describe "#search" do
@@ -80,6 +86,18 @@ describe Oedipus::DataMapper::Index do
 
     it "provides the count for the number of records returned" do
       index.search("badgers", limit: 2).count.should == 2
+    end
+
+    it "loads the models directly from the index" do
+      index.search("badgers").each do |p|
+        Post.user_id.loaded?(p).should be_true
+      end
+    end
+
+    it "allows lazy-loading of the non-indexed attributes" do
+      index.search("badgers").each do |p|
+        Post.created_at.loaded?(p).should be_false
+      end
     end
 
     describe "symbol operators" do

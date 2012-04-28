@@ -30,10 +30,19 @@ module Oedipus
       # @option [Connection] connection
       #   an instance of an Oedipus::Connection
       #   (defaults to the globally configured connection)
+      #
+      # @yields [Index] self
+      #   the index, so that mappings can be configured
       def initialize(model, options = {})
         @model       = model
         @name        = options[:name]       || model.storage_name
         @connection  = options[:connection] || Oedipus::DataMapper.connection
+        @mappings    = {}
+        @key         = model.key.first.name
+
+        map(:id, with: @key)
+
+        yield self
       end
 
       # Perform a fulltext and/or attribute search.
@@ -71,27 +80,43 @@ module Oedipus
       def search(*args)
         result = connection[name].search(*convert_filters(*args))
 
-        records = result[:records].collect do |r|
-          { "id" => r[:id] }
+        resources = result[:records].collect do |record|
+          record.inject(model.new) { |r, (k, v)|
+            r.tap { @mappings[k][:set].call(r, v) if @mappings.key?(k) }
+          }.tap { |r|
+            r.persistence_state = ::DataMapper::Resource::PersistenceState::Clean.new(r)
+          }
         end
 
         query = ::DataMapper::Query.new(
           model.repository,
           model,
-          fields:     [model.properties[:id]],
-          conditions: { id: records.map {|r| r["id"]} },
+          fields:     model.properties.select {|p| p.loaded?(resources.first)},
+          conditions: { @key => resources.map {|r| r[@key]} },
           reload:     false
         )
 
         Collection.new(
           query,
-          model.load(records, query),
+          resources,
           total_found: result[:total_found],
-          count:       records.count
+          count:       result[:records].count
         )
       end
 
+      def map(attr, options = {})
+        @mappings[attr] = normalize_mapping(attr, options.dup)
+      end
+
       private
+
+      def normalize_mapping(attr, options)
+        options.tap do
+          prop = options.delete(:with) || attr
+          options[:get] ||= ->(r)    { r.send("#{prop}")     }
+          options[:set] ||= ->(r, v) { r.send("#{prop}=", v) }
+        end
+      end
 
       def convert_filters(*args)
         query, options = connection[name].send(:extract_query_data, args)

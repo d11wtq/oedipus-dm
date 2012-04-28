@@ -1,4 +1,4 @@
-# Oedipus Integration for DataMapper
+# Oedipus Sphinx Integration for DataMapper
 
 This gem is a work in progress, binding [Oedipus](https://github.com/d11wtq/oedipus)
 with [DataMapper](https://github.com/datamapper/dm-core), in order to support
@@ -13,6 +13,9 @@ I complete wrapping the features.
 
 ### Configure Oedipus
 
+Oedipus must be configured to connect to a SphinxQL host.  The older searchd
+interface is not supported.
+
 ``` ruby
 require "oedipus-dm"
 
@@ -22,11 +25,19 @@ Oedipus::DataMapper.configure do |config|
 end
 ```
 
-In Rails you can do this in an initializer for example.  If you prefer not to use
-a global configuration, it is also possible to specify how to connect on a
-per-index basis.
+In Rails you can do this in an initializer for example.  If you prefer not to
+use a global configuration, it is possible to specify how to connect on a
+per-index basis instead.
 
-### Define an index method on your model
+### Defining an Index
+
+The most basic way to connect sphinx index with your model is to define a
+`.index` method on the model itself.  Oedipus doesn't directly mix behaviour
+into your models by default, as experience suggests this makes testing in
+isolation more difficult (note that you can easily have a standalone `Index`
+that wraps your model, if you prefer this).
+
+For a non-realtime index, something like the following would work fine.
 
 ``` ruby
 class Post
@@ -40,30 +51,105 @@ class Post
   belongs_to :user
 
   def self.index
-    Oedipus::DataMapper::Index.new(self)
+    @index ||= Oedipus::DataMapper::Index.new(self)
   end
 end
 ```
 
-Oedipus will use the `storage_name` of your model as the index name in Sphinx. If
-you need to use a different name, pass the `:name` option to the Index.
+Oedipus will use the `storage_name` of your model as the index name in Sphinx.
+If you need to use a different name, pass the `:name` option to the Index.
 
 ``` ruby
 def self.index
-  Oedipus::DataMapper::Index.new(self, name: :posts_rt)
+  @index ||= Oedipus::DataMapper::Index.new(self, name: :posts_rt)
 end
 ```
 
-If you have not globally configured Oedipus, or want to specify different connection
-settings, pass the `:connection` option.
+If you have not globally configured Oedipus, or want to specify different
+connection settings, pass the `:connection` option.
 
 ``` ruby
 def self.index
-  Oedipus::DataMapper::Index.new(self, connection: Oedipus.connect("localhost:9306"))
+  @index ||= Oedipus::DataMapper::Index.new(
+    self,
+    connection: Oedipus.connect("localhost:9306")
+  )
+end
+```
+
+#### Map fields and attributes with your model
+
+By default, the only field that Oedipus will map with your model is the `:id`
+attribute, which it will try to map with the key of your model.  This
+configuration will work fine for non-realtime indexes in most cases, but it
+is not optimized for many cases.
+
+When Oedipus finds search results, it pulls out all the attributes defined in
+your index, then tries to map them to instances of your model.  Mapping `:id`
+alone means that DataMapper will load all of your resources from the database
+when you first try to access any other attribute.
+
+Chances are, you have some attributes in your index that can be mapped to your
+model, avoiding the extra database hit.  You can add these mappings like so.
+
+``` ruby
+Oedipus::DataMapper::Index.new(self) do |idx|
+  idx.map :user_id
+  idx.map :views, with: :view_count
+end
+```
+
+`Index#map` takes the name of the attribute in your index.  By default it will
+map `1:1` with a property of the same name in your model.  If the property
+name in your model differs from that in the index, so may specify that with
+the `:with` option, as you see with the `:views` attribute above.
+
+Now when Oedipus loads your search results, they will be loaded with `:id`,
+`:user_id` and `:view_count` pre-loaded.
+
+#### Complex mappings
+
+The attributes in your index may not always be literal copies of the
+properties in your model.  If you need to provide an ad-hoc loading mechanism,
+you can pass a lambda as a `:set` option, which specifies how to set the
+value onto the resource.  To give a contrived example:
+
+``` ruby
+Oedipus::DataMapper::Index.new(self) do |idx|
+  idx.map :2x_views, set: ->(r, v) { r.views = v/2 }
+end
+```
+
+For realtime indexes, the `:get` counterpart exists, which specifies how to
+retrieve the value from your resource, for inserting into the index.
+
+``` ruby
+Oedipus::DataMapper::Index.new(self) do |idx|
+  idx.map :2x_views, set: ->(r, v) { r.views = v/2 }, get: ->(r) { r.view_count * 2 }
+end
+```
+
+#### Realtime indexes
+
+Since realtime indexes are updated whenever something changes on your models,
+you must also list the fulltext fields in the mappings for your index, so that
+they can be saved.  Note that fields are not returned in Sphinx search
+results, however.
+
+``` ruby
+Oedipus::DataMapper::Index.new(self) do |idx|
+  idx.map :title
+  idx.map :body
+  idx.map :user_id
+  idx.map :views, with: :view_count
 end
 ```
 
 ### Search for resources using the index
+
+The `Index` class provides a `#search` method, which accepts the same
+arguments as the underlying oedipus gem, but returns collections of
+DataMapper resources, instead of Hashes.
 
 ``` ruby
 Post.index.search("badgers").each do |post|
@@ -72,6 +158,10 @@ end
 ```
 
 #### Filter by attributes
+
+As with the main oedipus gem, attribute filters are specified as options, with
+the notable difference that you may use DataMapper's Symbol operators, for
+style/semantic reasons.
 
 ``` ruby
 Post.index.search("badgers", :views.gt => 1000).each do |post|
@@ -89,6 +179,9 @@ end
 
 #### Order the results
 
+This works as with the main oedipus gem, but you may use DataMapper's notation
+for style/semantic reasons.
+
 ``` ruby
 Post.index.search("badgers", order: [:views.desc]).each do |post|
   puts "Found post #{post.title}"
@@ -104,6 +197,8 @@ end
 ```
 
 #### Apply limits and offsets
+
+This is done just as you would expect.
 
 ``` ruby
 Post.index.search("badgers", limit: 30, offset: 60).each do |post|
