@@ -232,6 +232,85 @@ class Post
 end
 ```
 
+### Updating resource in the index
+
+**NOTE** This behaviour is currently broken in SphinxQL... you should use
+`#replace` instead.  I have patches in progress for Sphinx itself.
+
+Invoke `#update` on the index, passing in the resource.  The resource
+*must* be saved and *must* have a key.
+
+``` ruby
+Post.index.update(a_post)
+```
+
+In practice, to keep things in sync, you should do this in an `after :update`
+hook on your model.
+
+``` ruby
+class Post
+  # ... snip ...
+
+  after(:update) { model.index.update(self) }
+end
+```
+
+### Replacing a resource in the index
+
+Replacing a resource is much like updating it, except that it is completely
+overwritten.  Although SphinxQL in theory supports updates, it has never
+worked in practice, so you should use this method for now (current Sphinx
+version 2.0.4 at time of writing).
+
+``` ruby
+Post.index.replace(a_post)
+```
+
+In practice, to keep things in sync, you should do this in an `after :update`
+hook on your model.
+
+``` ruby
+class Post
+  # ... snip ...
+
+  after(:update) { model.index.replace(self) }
+end
+```
+
+You can also use this as a convenience, removing the need for both
+`after :create` and `after :update` hooks.  Just put it inside a single
+`after :save` hook, which will work in both cases.
+
+``` ruby
+class Post
+  # ... snip ...
+
+  # works for both inserts and updates
+  after(:save) { model.index.replace(self) }
+end
+```
+
+### Deleting a resource from the index
+
+You can invoke `#delete` on the index, passing in the resource.  The resource
+*must* be saved and *must* have a key.
+
+``` ruby
+Post.index.delete(a_post)
+```
+
+In practice, to keep things in sync, you should do this in an `before :destroy`
+hook on your model.  Note the use of `before` instead of `after`, in order to
+avoid returning missing data in your search results.
+
+``` ruby
+class Post
+  # ... snip ...
+
+  before(:destroy) { model.index.delete(self) }
+end
+```
+
 ## Licensing and Copyright
 
 Refer to the LICENSE file for details.

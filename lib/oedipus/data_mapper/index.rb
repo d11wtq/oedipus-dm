@@ -66,6 +66,63 @@ module Oedipus
         connection[name].insert(id, record)
       end
 
+      # Update the given resource in a realtime index.
+      #
+      # Fields and attributes will be read from any configured mappings.
+      #
+      # @param [DataMapper::Resource] resource
+      #   an instance of the model this index manages
+      #
+      # @return [Fixnum]
+      #   the number of resources updated (currently always 1 or 0)
+      def update(resource)
+        record = @mappings.inject({}) do |r, (k, mapping)|
+          r.merge!(k => mapping[:get].call(resource))
+        end
+
+        unless id = record.delete(:id)
+          raise ArgumentError, "Attempted to update a record without an ID"
+        end
+
+        connection[name].update(id, record)
+      end
+
+      # Delete the given resource from a realtime index.
+      #
+      # @param [DataMapper::Resource] resource
+      #   an instance of the model this index manages
+      #
+      # @return [Fixnum]
+      #   the number of resources updated (currently always 1 or 0)
+      def delete(resource)
+        unless id = @mappings[:id][:get].call(resource)
+          raise ArgumentError, "Attempted to delete a record without an ID"
+        end
+
+        connection[name].delete(id)
+      end
+
+      # Fully replace the given resource in a realtime index.
+      #
+      # Fields and attributes will be read from any configured mappings.
+      #
+      # @param [DataMapper::Resource] resource
+      #   an instance of the model this index manages
+      #
+      # @return [Fixnum]
+      #   the number of resources replaced (currently always 1)
+      def replace(resource)
+        record = @mappings.inject({}) do |r, (k, mapping)|
+          r.merge!(k => mapping[:get].call(resource))
+        end
+
+        unless id = record.delete(:id)
+          raise ArgumentError, "Attempted to replace a record without an ID"
+        end
+
+        connection[name].replace(id, record)
+      end
+
       # Perform a fulltext and/or attribute search.
       #
       # This method searches in the sphinx index, using Oedipus then returns

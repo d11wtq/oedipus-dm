@@ -31,6 +31,113 @@ describe Oedipus::DataMapper::Index do
     end
   end
 
+  describe "#insert" do
+    let(:user) do
+      User.create(username: "bob")
+    end
+
+    let(:post) do
+      Post.create(
+        title:      "There was one was a badger",
+        body:       "And a nice one he was.",
+        user:       user,
+        view_count: 98
+      )
+    end
+
+    before(:each) { index.insert(post) }
+
+    it "inserts the object into the index" do
+      conn[:posts_rt].fetch(post.id)[:user_id].should == user.id
+    end
+
+    it "uses the defined mappings" do
+      conn[:posts_rt].fetch(post.id)[:views].should == 98
+    end
+  end
+
+  pending "the sphinxql grammar does not currently support this, though I'm patching it" do
+    describe "#update" do
+      let(:user) do
+        User.create(username: "bob")
+      end
+
+      let(:post) do
+        Post.create(
+          title:      "There was one was a badger",
+          body:       "And a nice one he was.",
+          user:       user,
+          view_count: 98
+          )
+      end
+
+      before(:each) do
+        conn[:posts_rt].insert(post.id, title: "Not this", body: "Or this", views: 0, user_id: 100)
+        index.update(post)
+      end
+
+      it "updates the object in the index" do
+        conn[:posts_rt].fetch(post.id)[:user_id].should == user.id
+      end
+
+      it "uses the defined mappings" do
+        conn[:posts_rt].fetch(post.id)[:views].should == 98
+      end
+    end
+  end
+
+  describe "#replace" do
+    let(:user) do
+      User.create(username: "bob")
+    end
+
+    let(:post) do
+      Post.create(
+        title:      "There was one was a badger",
+        body:       "And a nice one he was.",
+        user:       user,
+        view_count: 98
+      )
+    end
+
+    before(:each) do
+      conn[:posts_rt].insert(post.id, title: "Not this", body: "Nor this", user_id: 100, views: 0)
+      index.replace(post)
+    end
+
+    it "updates the object in the index" do
+      conn[:posts_rt].fetch(post.id)[:user_id].should == user.id
+    end
+
+    it "uses the defined mappings" do
+      conn[:posts_rt].fetch(post.id)[:views].should == 98
+    end
+  end
+
+  describe "#delete" do
+    let(:user) do
+      User.create(username: "bob")
+    end
+
+    let(:post) do
+      Post.create(
+        title:      "There was one was a badger",
+        body:       "And a nice one he was.",
+        user:       user,
+        view_count: 98
+      )
+    end
+
+    before(:each) do
+      conn[:posts_rt].insert(post.id, title: "Not this", body: "Nor this", user_id: 100, views: 0)
+      index.delete(post)
+    end
+
+    it "removes the object in the index" do
+      conn[:posts_rt].fetch(post.id).should be_nil
+    end
+  end
+
   describe "#search" do
     before(:each) do
       @user_a = User.create(username: "bob")
@@ -78,6 +185,14 @@ describe Oedipus::DataMapper::Index do
         { id: @a.id, title: @a.title },
         { id: @b.id, title: @b.title },
         { id: @c.id, title: @c.title }
+      ]
+    end
+
+    it "handles the attribute mappings" do
+      index.search("badgers", order: :id).collect { |p| { view_count: p.view_count } }.should == [
+        { view_count: @a.view_count },
+        { view_count: @b.view_count },
+        { view_count: @c.view_count }
       ]
     end
 
@@ -155,31 +270,6 @@ describe Oedipus::DataMapper::Index do
           end
         end
       end
-    end
-  end
-
-  describe "#insert" do
-    let(:user) do
-      User.create(username: "bob")
-    end
-
-    let(:post) do
-      Post.create(
-        title:      "There was one was a badger",
-        body:       "And a nice one he was.",
-        user:       user,
-        view_count: 98
-      )
-    end
-
-    before(:each) { index.insert(post) }
-
-    it "inserts the object into the index" do
-      conn[:posts_rt].fetch(post.id)[:user_id].should == user.id
-    end
-
-    it "uses the defined mappings" do
-      conn[:posts_rt].fetch(post.id)[:views].should == 98
     end
   end
 end
