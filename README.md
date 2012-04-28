@@ -116,7 +116,7 @@ value onto the resource.  To give a contrived example:
 
 ``` ruby
 Oedipus::DataMapper::Index.new(self) do |idx|
-  idx.map :x2_views, set: ->(r, v) { r.views = v/2 }
+  idx.map :x2_views, set: ->(r, v) { r.view_count = v/2 }
 end
 ```
 
