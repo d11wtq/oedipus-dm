@@ -200,7 +200,7 @@ be made.
 Since realtime indexes are updated whenever something changes on your models,
 you must also list the fulltext fields in the mappings for your index, so that
 they can be saved.  Note that the fields are not returned in Sphinx search
-results, however; the will be lazy-loaded if you try to access them in the
+results, however; they will be lazy-loaded if you try to access them in the
 returned collection.
 
 ``` ruby
@@ -221,7 +221,7 @@ You can invoke `#insert` on the index, passing in the resource.  The resource
 Post.index.insert(a_post)
 ```
 
-In pratice, to keep things in sync, you should do this in an `after :create`
+In practice, to keep things in sync, you should do this in an `after :create`
 hook on your model.
 
 ``` ruby
