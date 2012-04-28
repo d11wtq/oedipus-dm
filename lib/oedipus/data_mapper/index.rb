@@ -45,6 +45,27 @@ module Oedipus
         yield self
       end
 
+      # Insert the given resource into a realtime index.
+      #
+      # Fields and attributes will be read from any configured mappings.
+      #
+      # @param [DataMapper::Resource] resource
+      #   an instance of the model this index manages
+      #
+      # @return [Fixnum]
+      #   the number of resources inserted (currently always 1)
+      def insert(resource)
+        record = @mappings.inject({}) do |r, (k, mapping)|
+          r.merge!(k => mapping[:get].call(resource))
+        end
+
+        unless id = record.delete(:id)
+          raise ArgumentError, "Attempted to insert a record without an ID"
+        end
+
+        connection[name].insert(id, record)
+      end
+
       # Perform a fulltext and/or attribute search.
       #
       # This method searches in the sphinx index, using Oedipus then returns
@@ -104,6 +125,24 @@ module Oedipus
         )
       end
 
+      # Map an attribute in the index with a property on the model.
+      #
+      # @param [Symbol] attr
+      #   the attribute in the sphinx index
+      #
+      # @param [Hash] options
+      #   mapping options
+      #
+      # @option [Symbol] with
+      #   the property if the name is not the same as the sphinx attribute
+      #
+      # @option [Proc] set
+      #   a proc/lambda that accepts a new resource, and the value,
+      #   to set the value onto the resource
+      #
+      # @option [Proc] get
+      #   a proc/lambda that accepts a resource and returns the value to set,
+      #   for realtime indexes only
       def map(attr, options = {})
         @mappings[attr] = normalize_mapping(attr, options.dup)
       end

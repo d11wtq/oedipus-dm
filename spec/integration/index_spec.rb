@@ -13,6 +13,7 @@ describe Oedipus::DataMapper::Index do
 
   before(:each) do
     Post.destroy!
+    User.destroy!
     empty_indexes
   end
 
@@ -154,6 +155,31 @@ describe Oedipus::DataMapper::Index do
           end
         end
       end
+    end
+  end
+
+  describe "#insert" do
+    let(:user) do
+      User.create(username: "bob")
+    end
+
+    let(:post) do
+      Post.create(
+        title:      "There was one was a badger",
+        body:       "And a nice one he was.",
+        user:       user,
+        view_count: 98
+      )
+    end
+
+    before(:each) { index.insert(post) }
+
+    it "inserts the object into the index" do
+      conn[:posts_rt].fetch(post.id)[:user_id].should == user.id
+    end
+
+    it "uses the defined mappings" do
+      conn[:posts_rt].fetch(post.id)[:views].should == 98
     end
   end
 end

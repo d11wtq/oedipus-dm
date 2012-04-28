@@ -129,23 +129,6 @@ Oedipus::DataMapper::Index.new(self) do |idx|
 end
 ```
 
-#### Realtime indexes
-
-Since realtime indexes are updated whenever something changes on your models,
-you must also list the fulltext fields in the mappings for your index, so that
-they can be saved.  Note that the fields are not returned in Sphinx search
-results, however; the will be lazy-loaded if you try to access them in the
-returned collection.
-
-``` ruby
-Oedipus::DataMapper::Index.new(self) do |idx|
-  idx.map :title
-  idx.map :body
-  idx.map :user_id
-  idx.map :views, with: :view_count
-end
-```
-
 ### Search for resources using the index
 
 The `Index` class provides a `#search` method, which accepts the same
@@ -204,6 +187,48 @@ This is done just as you would expect.
 ``` ruby
 Post.index.search("badgers", limit: 30, offset: 60).each do |post|
   puts "Found post #{post.title}"
+end
+```
+
+## Realtime index management
+
+Oedipus allows you to keep realtime indexes up-to-date as your models change.
+
+The index definition remains the same, but there are some considerations to
+be made.
+
+Since realtime indexes are updated whenever something changes on your models,
+you must also list the fulltext fields in the mappings for your index, so that
+they can be saved.  Note that the fields are not returned in Sphinx search
+results, however; the will be lazy-loaded if you try to access them in the
+returned collection.
+
+``` ruby
+Oedipus::DataMapper::Index.new(self) do |idx|
+  idx.map :title
+  idx.map :body
+  idx.map :user_id
+  idx.map :views, with: :view_count
+end
+```
+
+### Inserting a resource into the index
+
+You can invoke `#insert` on the index, passing in the resource.  The resource
+*must* be saved and *must* have a key.
+
+``` ruby
+Post.index.insert(a_post)
+```
+
+In pratice, to keep things in sync, you should do this in an `after :create`
+hook on your model.
+
+``` ruby
+class Post
+  # ... snip ...
+
+  after :create { model.index.insert(self) }
 end
 ```
 
