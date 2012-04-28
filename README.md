@@ -228,7 +228,7 @@ hook on your model.
 class Post
   # ... snip ...
 
-  after :create { model.index.insert(self) }
+  after(:create) { model.index.insert(self) }
 end
 ```
 
