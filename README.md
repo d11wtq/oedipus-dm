@@ -125,7 +125,7 @@ retrieve the value from your resource, for inserting into the index.
 
 ``` ruby
 Oedipus::DataMapper::Index.new(self) do |idx|
-  idx.map :x2_views, set: ->(r, v) { r.views = v/2 }, get: ->(r) { r.view_count * 2 }
+  idx.map :x2_views, set: ->(r, v) { r.view_count = v/2 }, get: ->(r) { r.view_count * 2 }
 end
 ```
 
