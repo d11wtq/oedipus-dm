@@ -1,15 +1,47 @@
 # Oedipus Sphinx Integration for DataMapper
 
-This gem is a work in progress, binding [Oedipus](https://github.com/d11wtq/oedipus)
-with [DataMapper](https://github.com/datamapper/dm-core), in order to support
+This gem provides a binding between
+[Oedipus](https://github.com/d11wtq/oedipus) and
+[DataMapper](https://github.com/datamapper/dm-core), in order to support
 the querying and updating of Sphinx indexes through DataMapper models.
 
-The gem is not yet published, as it is still in development.
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Configure oedipus](#confgure-oedipus)
+    - [Defining an index](#defining-an-index)
+      - [Map fields and attributes with your model](#map-fields-and-attributes-with-your-model)
+      - [Complex mappings](#complex-mappings)
+    - [Fulltext search](#fulltext-search-for-resources-via-the-index)
+      - [Filter by attributes](#filter-by-attributes)
+      - [Order the results](#order-the-results)
+      - [Apply limits and offsets](#apply-limits-and-offsets)
+    - [Faceted search](#faceted-search)
+      - [Performance tip](#performance-tip)
+    - [Parallel search](#performing-multiple-searches-in-parallel)
+    - [Realtime index management](#realtime-index-management)
+      - [Inserting a resource](#inserting-a-resource-into-the-index)
+      - [Replacing a resource](#replacing-a-resource-in-the-index)
+      - [Deleting a resource](#deleting-a-resource-from-the-index)
+    - [Integration with dm-pager](#integration-with-dm-pager-aka-dm-pagination)
+    - [Talking direcly to Oedipus](#talking-directly-to-oedipus)
+
+## Requirements
+
+  - Sphinx >= 2.0.2
+  - Ruby >= 1.9
+  - Mysql client development libraries
+
+## Installation
+
+Via rubygems
+
+    gem install oedipus-dm
 
 ## Usage
 
-All features of Oedipus will ultimately be supported, but I'm documenting as
-I complete wrapping the features.
+All features of the main oedipus gem are supported, with some allowance for
+the use of DataMapper's operators etc.
 
 ### Configure Oedipus
 
