@@ -1,6 +1,7 @@
 require "rspec"
 require "oedipus-dm"
 require "oedipus/rspec/test_harness"
+require "dm-pager"
 
 Dir[File.expand_path("../support/**/*.rb", __FILE__)].each { |f| require f }
 

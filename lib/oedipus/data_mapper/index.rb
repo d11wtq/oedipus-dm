@@ -11,6 +11,8 @@ module Oedipus
   module DataMapper
     # Provides a gateway between a DataMapper model and Oedipus.
     class Index
+      include Pagination
+
       attr_reader :model
       attr_reader :name
       attr_reader :connection
@@ -171,7 +173,9 @@ module Oedipus
       # @option [Object] *
       #   all other options are taken to be attribute filters
       def search(*args)
-        build_collection(raw.search(*convert_filters(args)))
+        filters       = convert_filters(args)
+        pager_options = extract_pager_options(filters)
+        build_collection(raw.search(*filters).merge(pager_options: pager_options))
       end
 
       # Perform multiple unrelated searches on the index.
@@ -298,7 +302,8 @@ module Oedipus
           resources,
           total_found: result[:total_found],
           count:       result[:records].count,
-          facets:      result.fetch(:facets, {}).inject({}) {|f, (k, v)| f.merge!(k => build_collection(v))}
+          facets:      result.fetch(:facets, {}).inject({}) {|f, (k, v)| f.merge!(k => build_collection(v))},
+          pager:       build_pager(result, result[:pager_options])
         )
       end
     end

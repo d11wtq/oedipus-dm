@@ -272,6 +272,55 @@ describe Oedipus::DataMapper::Index do
       end
     end
 
+    describe "pagination" do
+      before(:each) do
+        [
+          @e = Post.create(
+            title:      "Badgers again",
+            body:       "Blah blah badger",
+            view_count: 20,
+            user:       @user_a
+          ),
+          @f = Post.create(
+            title:      "Don't take my badger!",
+            body:       "Badgers are afraid of the dark",
+            view_count: 21,
+            user:       @user_a
+          ),
+          @g = Post.create(
+            title:      "You seen one badger, you seen em all",
+            body:       "Badgers, they're all the same",
+            view_count: 4,
+            user:       @user_b
+          )
+        ].each do |p|
+          conn[:posts_rt].insert(p.id, title: p.title, body: p.body, views: p.view_count, user_id: p.user.id)
+        end
+      end
+
+      context "with :per_page specified" do
+        context "with :page => 1" do
+          it "returns the first page of the results" do
+            index.search("badgers", order: :id, pager: {page: 1, per_page: 2}).map(&:id).should == [@a.id, @b.id]
+          end
+
+          it "provides a #pager with #current_page = 1" do
+            index.search("badgers", order: :id, pager: {page: 1, per_page: 2}).pager.current_page.should == 1
+          end
+        end
+
+        context "with :page => 2" do
+          it "returns the second page of the results" do
+            index.search("badgers", order: :id, pager: {page: 2, per_page: 2}).map(&:id).should == [@c.id, @e.id]
+          end
+
+          it "provides a #pager with #current_page = 2" do
+            index.search("badgers", order: :id, pager: {page: 2, per_page: 2}).pager.current_page.should == 2
+          end
+        end
+      end
+    end
+
     describe "with :facets" do
       it "returns the main results in the collection" do
         index.search(

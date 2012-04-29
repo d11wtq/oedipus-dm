@@ -22,9 +22,10 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = Oedipus::DataMapper::VERSION
 
-  gem.add_runtime_dependency "oedipus"
-  gem.add_runtime_dependency "dm-core"
+  gem.add_runtime_dependency "oedipus", ">= 0.0.5"
+  gem.add_runtime_dependency "dm-core", ">= 1.2"
 
   gem.add_development_dependency "rake"
   gem.add_development_dependency "rspec"
+  gem.add_development_dependency "dm-pager"
 end

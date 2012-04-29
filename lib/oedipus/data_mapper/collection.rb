@@ -39,6 +39,7 @@ module Oedipus
         @total_found = options[:total_found]
         @count       = options[:count]
         @facets      = options.fetch(:facets, {})
+        @pager       = options[:pager]
       end
     end
   end
