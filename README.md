@@ -8,7 +8,7 @@ the querying and updating of Sphinx indexes through DataMapper models.
   - [Requirements](#requirements)
   - [Installation](#installation)
   - [Usage](#usage)
-    - [Configure oedipus](#confgure-oedipus)
+    - [Configure oedipus](#configure-oedipus)
     - [Defining an index](#defining-an-index)
     - [Fulltext search](#fulltext-search-for-resources-via-the-index)
     - [Faceted search](#faceted-search)
