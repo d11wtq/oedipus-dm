@@ -192,7 +192,7 @@ end
 
 ### Integration with dm-pager (a.k.a dm-pagination)
 
-Oedipus integrates will with [dm-pager](https://github.com/visionmedia/dm-pagination),
+Oedipus integrates well with [dm-pager](https://github.com/visionmedia/dm-pagination),
 allowing you to pass a `:pager` option to the `#search` method.  Limits and
 offsets will be applied, and the resulting collection will have a `#pager`
 method that you can use.
