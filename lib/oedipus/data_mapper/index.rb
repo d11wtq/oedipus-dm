@@ -45,6 +45,14 @@ module Oedipus
         yield self
       end
 
+      # Returns the underlying Index, for carrying out low-level operations.
+      #
+      # @return [Oedipus::Index]
+      #   the underlying Index, used by Oedipus
+      def raw
+        @raw ||= connection[name]
+      end
+
       # Insert the given resource into a realtime index.
       #
       # Fields and attributes will be read from any configured mappings.
@@ -63,7 +71,7 @@ module Oedipus
           raise ArgumentError, "Attempted to insert a record without an ID"
         end
 
-        connection[name].insert(id, record)
+        raw.insert(id, record)
       end
 
       # Update the given resource in a realtime index.
@@ -84,7 +92,7 @@ module Oedipus
           raise ArgumentError, "Attempted to update a record without an ID"
         end
 
-        connection[name].update(id, record)
+        raw.update(id, record)
       end
 
       # Delete the given resource from a realtime index.
@@ -99,7 +107,7 @@ module Oedipus
           raise ArgumentError, "Attempted to delete a record without an ID"
         end
 
-        connection[name].delete(id)
+        raw.delete(id)
       end
 
       # Fully replace the given resource in a realtime index.
@@ -120,7 +128,7 @@ module Oedipus
           raise ArgumentError, "Attempted to replace a record without an ID"
         end
 
-        connection[name].replace(id, record)
+        raw.replace(id, record)
       end
 
       # Perform a fulltext and/or attribute search.
@@ -132,17 +140,24 @@ module Oedipus
       # the handled attributes will be loaded, meaning lazy-loading will occur
       # should any other attributes be accessed.
       #
+      # A faceted search may be performed by passing in the :facets option. All
+      # facets are returned via a #facets accessor on the collection.
+      #
       # @param [String] fulltext_query
       #   a fulltext query to send to sphinx, optional
       #
       # @param [Hash] options
-      #   options for filtering, sorting and range-limiting
+      #   options for filtering, facets, sorting and range-limiting
       #
       # @return [Collecton]
       #   a collection object containing the given resources
       #
       # @option [Array] attrs
       #   a list of attributes to fetch (supports '*' and complex expressions)
+      #
+      # @option [Hash] facets
+      #   a map of facets to execute, based on the base query (see the main
+      #   oedipus gem for full details)
       #
       # @option [Fixnum] limit
       #   a limit to apply
@@ -156,7 +171,30 @@ module Oedipus
       # @option [Object] *
       #   all other options are taken to be attribute filters
       def search(*args)
-        build_collection(connection[name].search(*convert_filters(args)))
+        build_collection(raw.search(*convert_filters(args)))
+      end
+
+      # Perform multiple unrelated searches on the index.
+      #
+      # Accepts a Hash of varying searches and returns a Hash of results.
+      #
+      # @param [Hash] searches
+      #   a Hash, whose keys are named searches and whose values are arguments
+      #   to #search
+      #
+      # @return [Hash]
+      #   a Hash whose keys are the same as the inputs and whose values are
+      #   the corresponding results
+      def multi_search(searches)
+        raise ArgumentError, "Argument 1 for #multi_search must be a Hash" unless Hash === searches
+
+        raw.multi_search(
+          searches.inject({}) { |o, (k, v)|
+            o.merge!(k => convert_filters(v))
+          }
+        ).inject({}) { |o, (k, v)|
+          o.merge!(k => build_collection(v))
+        }
       end
 
       # Map an attribute in the index with a property on the model.

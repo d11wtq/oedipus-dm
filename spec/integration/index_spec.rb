@@ -304,4 +304,46 @@ describe Oedipus::DataMapper::Index do
       end
     end
   end
+
+  describe "#multi_search" do
+    before(:each) do
+      @user_a = User.create(username: "bob")
+      @user_b = User.create(username: "abi")
+      [
+        @a = Post.create(
+          title:      "Badgers on the run",
+          body:       "Big badger little badger",
+          view_count: 7,
+          user:       @user_a
+        ),
+        @b = Post.create(
+          title:      "Do it for the badgers!",
+          body:       "The badgers need you",
+          view_count: 11,
+          user:       @user_a
+        ),
+        @c = Post.create(
+          title:      "Talk to the hand, not to the badgers",
+          body:       "Cos this badger ain't listening",
+          view_count: 6,
+          user:       @user_b
+        ),
+        @d = Post.create(
+          title:      "Rabbits doing rabbity things",
+          body:       "Being all cute, with their floppy little ears",
+          view_count: 9,
+          user:       @user_a
+        )
+      ].each do |p|
+        conn[:posts_rt].insert(p.id, title: p.title, body: p.body, views: p.view_count, user_id: p.user.id)
+      end
+    end
+
+    it "returns a Hash mapping the search names with their collections" do
+      index.multi_search(
+        popular_badgers: ["badgers", :views.gte => 7],
+        rabbits:         "rabbits"
+      ).should be_a_kind_of(Hash)
+    end
+  end
 end

@@ -256,6 +256,32 @@ posts = Post.index.search(
 puts posts.facets[:popular].total_found
 ```
 
+### Performing multiple searches in parallel
+
+It is possible to execute multiple searches in a single request, much like
+performing a faceted search, but with the exeception that the queries need
+not be related to each other in any way.
+
+This is done through `#multi_search`, which accepts a Hash of named searches.
+
+``` ruby
+Post.index.multi_search(
+  badgers:         "badgers",
+  popular_badgers: ["badgers", :views.gte => 1000],
+  rabbits:         "rabbits"
+).each do |name, results|
+  puts "Results for #{name}..."
+  results.each do |post|
+    puts "Title: #{post.title}"
+  end
+end
+```
+
+The return value is a Hash whose keys match the names of the searches in the
+input Hash.  The end result is much like if you had called `#search`
+repeatedly, except that Sphinx has a chance to optimize the common parts in
+the queries, which it will attempt to do.
+
 ## Realtime index management
 
 Oedipus allows you to keep realtime indexes up-to-date as your models change.
@@ -375,6 +401,24 @@ class Post
 
   before(:destroy) { model.index.delete(self) }
 end
+```
+
+## Talking directly to Oedipus
+
+If you want to by-pass DataMapper and just go straight to Oedipus, which returns
+lightweight results using Arrays and Hashes, you call use the `#raw` method on the
+index.
+
+See the [oedipus documentation](https://github.com/d11wtq/oedipus) for details of
+how to work with this object.
+
+``` ruby
+require 'pp'
+pp Post.index.raw.search(
+  "badgers",
+  user_id: Oedipus.not(7),
+  order:   {views: :desc}
+)
 ```
 
 ## Licensing and Copyright
