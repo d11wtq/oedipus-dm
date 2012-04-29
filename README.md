@@ -190,6 +190,31 @@ Post.index.search("badgers", limit: 30, offset: 60).each do |post|
 end
 ```
 
+### Integration with dm-pager (a.k.a dm-pagination)
+
+Oedipus integrates will with [dm-pager](https://github.com/visionmedia/dm-pagination),
+allowing you to pass a `:pager` option to the `#search` method.  Limits and
+offsets will be applied, and the resulting collection will have a `#pager`
+method that you can use.
+
+You must have dm-pager loaded for this to work.  Oedipus does not directly
+depend on it.
+
+``` ruby
+Post.index.search(
+  "badgers",
+  pager: {
+    page:       7,
+    per_page:   30,
+    page_param: :page
+  }
+)
+```
+
+In the current version it is *not* possible to do something like `search(..).page(2)`,
+or rather, doing so will not do what you expect, as the results have already been
+loaded.  This is on my radar, however.
+
 ### Faceted Search
 
 Oedipus makes faceted searches really easy.  Pass in a `:facets` option, as a
