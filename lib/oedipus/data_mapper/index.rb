@@ -156,30 +156,7 @@ module Oedipus
       # @option [Object] *
       #   all other options are taken to be attribute filters
       def search(*args)
-        result = connection[name].search(*convert_filters(*args))
-
-        resources = result[:records].collect do |record|
-          record.inject(model.new) { |r, (k, v)|
-            r.tap { @mappings[k][:set].call(r, v) if @mappings.key?(k) }
-          }.tap { |r|
-            r.persistence_state = ::DataMapper::Resource::PersistenceState::Clean.new(r)
-          }
-        end
-
-        query = ::DataMapper::Query.new(
-          model.repository,
-          model,
-          fields:     model.properties.select {|p| p.loaded?(resources.first)},
-          conditions: { @key => resources.map {|r| r[@key]} },
-          reload:     false
-        )
-
-        Collection.new(
-          query,
-          resources,
-          total_found: result[:total_found],
-          count:       result[:records].count
-        )
+        build_collection(connection[name].search(*convert_filters(args)))
       end
 
       # Map an attribute in the index with a property on the model.
@@ -214,8 +191,9 @@ module Oedipus
         end
       end
 
-      def convert_filters(*args)
-        query, options = connection[name].send(:extract_query_data, args)
+      # Performs a deep conversion of DataMapper-style operators to Oedipus operators
+      def convert_filters(args)
+        query, options = connection[name].send(:extract_query_data, args, nil)
         [
           query,
           options.inject({}) { |o, (k, v)|
@@ -229,11 +207,17 @@ module Oedipus
               end
             when :order
               o.merge!(order: convert_order(v))
+            when :facets
+              o.merge!(facets: convert_facets(v))
             else
               o.merge!(k => v)
             end
           }
-        ]
+        ].compact
+      end
+
+      def convert_facets(facets)
+        Array(facets).inject({}) { |o, (k, v)| o.merge!(k => convert_filters(v)) }
       end
 
       def convert_order(order)
@@ -252,6 +236,32 @@ module Oedipus
             end
           }
         ]
+      end
+
+      def build_collection(result)
+        resources = result[:records].collect do |record|
+          record.inject(model.new) { |r, (k, v)|
+            r.tap { @mappings[k][:set].call(r, v) if @mappings.key?(k) }
+          }.tap { |r|
+            r.persistence_state = ::DataMapper::Resource::PersistenceState::Clean.new(r)
+          }
+        end
+
+        query = ::DataMapper::Query.new(
+          model.repository,
+          model,
+          fields:     model.properties.select {|p| p.loaded?(resources.first)},
+          conditions: { @key => resources.map {|r| r[@key]} },
+          reload:     false
+        )
+
+        Collection.new(
+          query,
+          resources,
+          total_found: result[:total_found],
+          count:       result[:records].count,
+          facets:      result.fetch(:facets, {}).inject({}) {|f, (k, v)| f.merge!(k => build_collection(v))}
+        )
       end
     end
   end

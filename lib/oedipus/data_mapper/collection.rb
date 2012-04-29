@@ -13,6 +13,7 @@ module Oedipus
     class Collection < ::DataMapper::Collection
       attr_reader :total_found
       attr_reader :count
+      attr_reader :facets
 
       # Initialize a new Collection for the given query and records.
       #
@@ -30,10 +31,14 @@ module Oedipus
       #
       # @option [Integer] count
       #   the actual number of results
+      #
+      # @option [Hash] facets
+      #   any facets that were also found
       def initialize(query, records = nil, options = {})
         super(query, records)
         @total_found = options[:total_found]
         @count       = options[:count]
+        @facets      = options.fetch(:facets, {})
       end
     end
   end

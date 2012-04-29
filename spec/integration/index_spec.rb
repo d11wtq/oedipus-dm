@@ -271,5 +271,37 @@ describe Oedipus::DataMapper::Index do
         end
       end
     end
+
+    describe "with :facets" do
+      it "returns the main results in the collection" do
+        index.search(
+          "badgers",
+          order: :id,
+          facets: {
+            popular: {:views.gte => 7}
+          }
+        ).map(&:id).should == [@a.id, @b.id, @c.id]
+      end
+
+      it "returns the facets inside the collection" do
+        index.search(
+          "badgers",
+          order: :id,
+          facets: {
+            popular: {:views.gte => 7}
+          }
+        ).facets[:popular].map(&:id).should == [@a.id, @b.id]
+      end
+
+      it "provides data on the matches inside the facets" do
+        index.search(
+          "badgers",
+          order: :id,
+          facets: {
+            popular: {:views.gte => 7}
+          }
+        ).facets[:popular].total_found.should == 2
+      end
+    end
   end
 end

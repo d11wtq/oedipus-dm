@@ -129,7 +129,7 @@ Oedipus::DataMapper::Index.new(self) do |idx|
 end
 ```
 
-### Search for resources using the index
+### Fulltext search for resources, via the index
 
 The `Index` class provides a `#search` method, which accepts the same
 arguments as the underlying oedipus gem, but returns collections of
@@ -188,6 +188,72 @@ This is done just as you would expect.
 Post.index.search("badgers", limit: 30, offset: 60).each do |post|
   puts "Found post #{post.title}"
 end
+```
+
+### Faceted Search
+
+Oedipus makes faceted searches really easy.  Pass in a `:facets` option, as a
+Hash, where each key names the facet and the value lists the arguments, then
+Oedipus provides the results for each facet nested inside the collection.
+
+Each facet inherits the base search, which it may override in some way, such as
+filtering by an attribute, or modifying the fulltext query itself.
+
+``` ruby
+posts = Post.index.search(
+  "badgers",
+  facets: {
+    popular:         {:views.gte => 1000},
+    in_title:        "@title (%{query})",
+    popular_farming: ["%{query} & farming", {:views.gte => 200}]
+  }
+)
+
+puts "Found #{posts.total_found} posts about badgers..."
+posts.each do |post|
+  puts "Title: #{post.title}"
+end
+
+puts "Found #{posts.facets[:popular].total_found} popular posts about badgers"
+posts.facets[:popular].each do |post|
+  puts "Title: #{post.title}"
+end
+
+puts "Found #{posts.facets[:in_title].total_found} posts with 'badgers' in the title"
+posts.facets[:in_title].each do |post|
+  puts "Title: #{post.title}"
+end
+
+puts "Found #{posts.facets[:popular_farming].total_count} popular posts about both 'badgers' and 'farming'"
+posts.facets[:popular_farming].each do |post|
+  puts "Title: #{post.title}"
+end
+```
+
+The actual arguments to each facet can be either an array (if overriding both
+`query` and `options`), or just the query or the options to override.
+
+Oedipus replaces `%{query}` in your facets with whatever the base query was,
+which is useful if you want to amend the search, rather than completely
+overwrite it (which is also possible).
+
+#### Performance tip
+
+A common use of faceted search is to provide links to the full listing for
+each facet, but not necessarily to display the actual results.  If you only
+need the meta data, such as the count, set `:limit => 0` on each facet. The
+result sets for the facets will be empty, but the `#total_found` will still
+be reflected.
+
+``` ruby
+posts = Post.index.search(
+  "badgers",
+  facets: {
+    popular: {:views.gte => 1000, :limit => 0}
+  }
+)
+
+puts posts.facets[:popular].total_found
 ```
 
 ## Realtime index management
