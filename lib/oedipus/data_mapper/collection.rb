@@ -11,9 +11,12 @@ module Oedipus
   module DataMapper
     # Adds some additional methods to DataMapper::Collection to provide meta data.
     class Collection < ::DataMapper::Collection
+      attr_reader :time
       attr_reader :total_found
       attr_reader :count
       attr_reader :facets
+      attr_reader :keywords
+      attr_reader :docs
 
       # Initialize a new Collection for the given query and records.
       #
@@ -36,8 +39,11 @@ module Oedipus
       #   any facets that were also found
       def initialize(query, records = nil, options = {})
         super(query, records)
+        @time        = options[:time]
         @total_found = options[:total_found]
         @count       = options[:count]
+        @keywords    = options[:keywords]
+        @docs        = options[:docs]
         @facets      = options.fetch(:facets, {})
         @pager       = options[:pager]
       end

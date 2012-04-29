@@ -254,8 +254,11 @@ module Oedipus
         Collection.new(
           query,
           resources,
+          time:        result[:time],
           total_found: result[:total_found],
           count:       result[:records].count,
+          keywords:    result[:keywords],
+          docs:        result[:docs],
           facets:      result.fetch(:facets, {}).inject({}) {|f, (k, v)| f.merge!(k => build_collection(v))},
           pager:       build_pager(result, result[:pager_options])
         )
