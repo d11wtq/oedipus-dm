@@ -351,6 +351,23 @@ describe Oedipus::DataMapper::Index do
           }
         ).facets[:popular].total_found.should == 2
       end
+
+      context "in n-dimensions" do
+        it "returns the nested facets inside the child collection" do
+          index.search(
+            "badgers",
+            order: :id,
+            facets: {
+              popular: {
+                :views.gte => 7,
+                :facets    => {
+                  running: "%{query} & run"
+                }
+              }
+            }
+          ).facets[:popular].facets[:running].total_found.should == 1
+        end
+      end
     end
   end
 

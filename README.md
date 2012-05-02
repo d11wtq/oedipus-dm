@@ -5,6 +5,9 @@ This gem provides a binding between
 [DataMapper](https://github.com/datamapper/dm-core), in order to support
 the querying and updating of Sphinx indexes through DataMapper models.
 
+Oedipus provides a clean interface with Sphinx 2, allowing the use of
+realtime indexes and multi-dimensional faceted search via ruby.
+
   - [Requirements](#requirements)
   - [Installation](#installation)
   - [Usage](#usage)
@@ -241,11 +244,15 @@ loaded.  This is on my radar, however.
 ### Faceted Search
 
 Oedipus makes faceted searches really easy.  Pass in a `:facets` option, as a
-Hash, where each key names the facet and the value lists the arguments, then
-Oedipus provides the results for each facet nested inside the collection.
+Hash, where each key identifies the facet and the value lists the arguments,
+then Oedipus provides the results for each facet nested inside the collection.
 
 Each facet inherits the base search, which it may override in some way, such as
 filtering by an attribute, or modifying the fulltext query itself.
+
+The key used to identify the facet can be any arbitrary object, which may be
+useful in some application-specific contexts, where the key can carry associated
+domain-specific data.
 
 ``` ruby
 posts = Post.index.search(
@@ -284,6 +291,29 @@ The actual arguments to each facet can be either an array (if overriding both
 Oedipus replaces `%{query}` in your facets with whatever the base query was,
 which is useful if you want to amend the search, rather than completely
 overwrite it (which is also possible).
+
+#### Faceted search with N dimensions
+
+Each facet in a faceted search can in turn contain facets of its own.  This
+allows you to perform multi-dimensional faceted searches, where each level
+deeper adds a new dimension to the search.  The equivalent tree is returned in
+the results.
+
+``` ruby
+posts = Post.index.search(
+  "badgers",
+  facets: {
+    popular: {
+      :views.gte => 1000,
+      :facets    => {
+        in_title: "@title (%{query})",
+      }
+    }
+  }
+)
+
+puts "Found #{posts.facets[:popular].facets[:in_title].total_found} popular posts with 'badgers' in title"
+```
 
 #### Performance tip
 
