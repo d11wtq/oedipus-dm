@@ -45,7 +45,7 @@ module Oedipus
 
         map(:id, with: @key)
 
-        yield self
+        yield self if block_given?
       end
 
       # Returns the underlying Index, for carrying out low-level operations.
