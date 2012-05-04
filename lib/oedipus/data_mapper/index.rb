@@ -194,9 +194,7 @@ module Oedipus
         raise ArgumentError, "Argument 1 for #multi_search must be a Hash" unless Hash === searches
 
         raw.multi_search(
-          searches.inject({}) { |o, (k, v)|
-            o.merge!(k => convert_filters(v))
-          }
+          searches.inject({}) { |o, (k, v)| o.merge!(k => convert_filters(v)) }
         ).inject({}) { |o, (k, v)|
           o.merge!(k => build_collection(v))
         }
@@ -221,16 +219,16 @@ module Oedipus
       #   a proc/lambda that accepts a resource and returns the value to set,
       #   for realtime indexes only
       def map(attr, options = {})
-        @mappings[attr] = normalize_mapping(attr, options.dup)
+        @mappings[attr.to_sym] = normalize_mapping(attr, options.dup)
       end
 
       private
 
       def normalize_mapping(attr, options)
         options.tap do
-          prop = options.delete(:with) || attr
-          options[:get] ||= ->(r)    { r.send("#{prop}")     }
-          options[:set] ||= ->(r, v) { r.send("#{prop}=", v) }
+          prop = (options.delete(:with) || attr).to_sym
+          options[:get] ||= DefaultProc::Get.new(model, prop)
+          options[:set] ||= DefaultProc::Set.new(model, prop)
         end
       end
 

@@ -13,6 +13,7 @@ require "dm-core"
 require "oedipus/data_mapper/version"
 require "oedipus/data_mapper/conversions"
 require "oedipus/data_mapper/pagination"
+require "oedipus/data_mapper/default_proc"
 require "oedipus/data_mapper/index"
 require "oedipus/data_mapper/collection"
 
