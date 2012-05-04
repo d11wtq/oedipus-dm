@@ -22,7 +22,7 @@ module Oedipus
 
         def call(resource)
           if @property
-            @property.dump(resource[@attr])
+            @property.dump(resource.send(@attr))
           else
             resource.send(@attr)
           end
