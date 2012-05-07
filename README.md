@@ -108,15 +108,17 @@ end
 By default, the only field that Oedipus will map with your model is the `:id`
 attribute, which it will try to map with the key of your model.  This
 configuration will work fine for non-realtime indexes in most cases, but it
-is not optimized for many cases.
+is not optimal when you have attributes in your index that can be mapped with
+your model.
 
 When Oedipus finds search results, it pulls out all the attributes defined in
 your index, then tries to map them to instances of your model.  Mapping `:id`
 alone means that DataMapper will load all of your resources from the database
 when you first try to access any other attribute.
 
-Chances are, you have some attributes in your index that can be mapped to your
-model, avoiding the extra database hit.  You can add these mappings like so.
+Chances are, you have some (or lots of) attributes in your index that can be
+mapped to your model, avoiding the extra database hit.  You can add these
+mappings like so.
 
 ``` ruby
 Oedipus::DataMapper::Index.new(self) do |idx|
