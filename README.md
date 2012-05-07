@@ -24,7 +24,7 @@ realtime indexes and multi-dimensional faceted search via ruby.
 
   - Sphinx >= 2.0.2
   - Ruby >= 1.9
-  - Mysql client development libraries
+  - Mysql client development libraries >= 4.1
 
 ## Installation
 
@@ -57,7 +57,7 @@ per-index basis instead.
 
 ### Defining an Index
 
-The most basic way to connect sphinx index with your model is to define a
+The most basic way to connect a sphinx index with your model is to define a
 `.index` method on the model itself.  Oedipus doesn't directly mix behaviour
 into your models by default, as experience suggests this makes testing in
 isolation more difficult (note that you can easily have a standalone `Index`
