@@ -155,6 +155,9 @@ Oedipus::DataMapper::Index.new(self) do |idx|
 end
 ```
 
+You may specify `nil` for either the `:get` or `:set` options, in order to
+explicitly disable the transmission of the value in either direction.
+
 ### Fulltext search for resources, via the index
 
 The `Index` class provides a `#search` method, which accepts the same

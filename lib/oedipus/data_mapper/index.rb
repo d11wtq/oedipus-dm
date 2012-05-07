@@ -213,11 +213,11 @@ module Oedipus
       #
       # @option [Proc] set
       #   a proc/lambda that accepts a new resource, and the value,
-      #   to set the value onto the resource
+      #   to set the value onto the resource- nil permitted
       #
       # @option [Proc] get
       #   a proc/lambda that accepts a resource and returns the value to set,
-      #   for realtime indexes only
+      #   for realtime indexes only- nil permitted
       def map(attr, options = {})
         @mappings[attr.to_sym] = normalize_mapping(attr, options.dup)
       end
@@ -227,15 +227,15 @@ module Oedipus
       def normalize_mapping(attr, options)
         options.tap do
           prop = (options.delete(:with) || attr).to_sym
-          options[:get] ||= DefaultProc::Get.new(model, prop)
-          options[:set] ||= DefaultProc::Set.new(model, prop)
+          options[:get] = DefaultProc::Get.new(model, prop) unless options.key?(:get)
+          options[:set] = DefaultProc::Set.new(model, prop) unless options.key?(:set)
         end
       end
 
       def build_collection(result)
         resources = result[:records].collect do |record|
           record.inject(model.new) { |r, (k, v)|
-            r.tap { @mappings[k][:set].call(r, v) if @mappings.key?(k) }
+            r.tap { @mappings[k][:set].call(r, v) if @mappings.key?(k) && @mappings[k][:set] }
           }.tap { |r|
             r.persistence_state = ::DataMapper::Resource::PersistenceState::Clean.new(r)
           }
