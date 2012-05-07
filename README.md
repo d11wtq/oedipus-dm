@@ -127,10 +127,12 @@ Oedipus::DataMapper::Index.new(self) do |idx|
 end
 ```
 
-`Index#map` takes the name of the attribute in your index.  By default it will
-map 1:1 with a property of the same name in your model.  If the property name
-in your model differs from that in the index, you may specify that with the
-`:with` option, as you see with the `:views` attribute above.
+The `#map` method takes the name of the attribute in your index.  By default
+it will map 1:1 with a property of the same name in your model.  If the
+property name in your model differs from that in the index, you may specify
+that with the `:with` option, as you see with the `:views` attribute above.
+
+You may also map arbitrary methods in your model— Oedipus will figure this out.
 
 Now when Oedipus loads your search results, they will be loaded with `:id`,
 `:user_id` and `:view_count` pre-loaded.
