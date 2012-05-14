@@ -102,7 +102,7 @@ connection settings, pass the `:connection` option.
 def self.index
   @index ||= Oedipus::DataMapper::Index.new(
     self,
-    connection: Oedipus.connect("localhost:9306")
+    connection: Oedipus.connect("127.0.0.1:9306")
   )
 end
 ```
