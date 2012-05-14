@@ -46,7 +46,7 @@ interface is not supported.
 require "oedipus-dm"
 
 Oedipus::DataMapper.configure do |config|
-  config.host = "localhost"
+  config.host = "127.0.0.1"
   config.port = 9306
 end
 ```
@@ -54,6 +54,10 @@ end
 In Rails you can do this in an initializer for example.  If you prefer not to
 use a global configuration, it is possible to specify how to connect on a
 per-index basis instead.
+
+You should use '127.0.0.1' instead of 'localhost', in order to prevent the
+MySQL library from using a UNIX socket, which Sphinx doesn't currently
+support.
 
 ### Defining an Index
 
