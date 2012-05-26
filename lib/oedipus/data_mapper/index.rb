@@ -200,6 +200,17 @@ module Oedipus
         }
       end
 
+      # Fetch a specific record from the index, or nil if it's not in the index.
+      #
+      # @param [Fixnum] id
+      #   the id of the resource to fetch
+      #
+      # @return [DataMapper::Resource]
+      #   the resource, or nil if not found
+      def fetch(id)
+        build_resource(raw.fetch(id))
+      end
+
       # Map an attribute in the index with a property on the model.
       #
       # @param [Symbol] attr
@@ -232,14 +243,18 @@ module Oedipus
         end
       end
 
+      def build_resource(record)
+        return if record.nil?
+
+        record.inject(model.new) { |r, (k, v)|
+          r.tap { @mappings[k][:set].call(r, v) if @mappings.key?(k) && @mappings[k][:set] }
+        }.tap { |r|
+          r.persistence_state = ::DataMapper::Resource::PersistenceState::Clean.new(r)
+        }
+      end
+
       def build_collection(result)
-        resources = result[:records].collect do |record|
-          record.inject(model.new) { |r, (k, v)|
-            r.tap { @mappings[k][:set].call(r, v) if @mappings.key?(k) && @mappings[k][:set] }
-          }.tap { |r|
-            r.persistence_state = ::DataMapper::Resource::PersistenceState::Clean.new(r)
-          }
-        end
+        resources = result[:records].collect { |record| build_resource(record) }
 
         query = ::DataMapper::Query.new(
           model.repository,

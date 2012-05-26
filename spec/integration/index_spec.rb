@@ -46,6 +46,35 @@ describe Oedipus::DataMapper::Index do
     end
   end
 
+  describe "#fetch" do
+    let(:user) do
+      User.create(username: "bob")
+    end
+
+    let(:post) do
+      Post.create(
+        title:      "There was one was a badger",
+        body:       "And a nice one he was.",
+        user:       user,
+        view_count: 98
+      )
+    end
+
+    before(:each) do
+      conn[:posts_rt].insert(
+        post.id,
+        title:   post.title,
+        body:    post.body,
+        user_id: post.user_id,
+        views:   post.view_count
+      )
+    end
+
+    it "fetches an individual resource from the index" do
+      index.fetch(post.id).should == post
+    end
+  end
+
   pending "the sphinxql grammar does not currently support this, though I'm patching it" do
     describe "#update" do
       let(:user) do
