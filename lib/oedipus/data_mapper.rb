@@ -31,14 +31,14 @@ module Oedipus
       #
       # @return [Connection]
       def connection
-        @connection ||= Connection.new(host: config.host, port: config.port)
+        @connection ||= Connection.new(host: config.host, port: config.port, verify: config.verify)
       end
 
       # Returns the configuration options.
       #
       # @return [Struct<host, port>]
       def config
-        @config ||= Struct.new(:host, :port).new("localhost", 9306)
+        @config ||= Struct.new(:host, :port, :verify).new("localhost", 9306, true)
       end
     end
   end

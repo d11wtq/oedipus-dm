@@ -1,25 +1,15 @@
 require "spec_helper"
 
 describe Oedipus::DataMapper::Index do
-  include Oedipus::RSpec::TestHarness
-
-  before(:all) do
-    set_data_dir File.expand_path("../../data", __FILE__)
-    set_searchd  ENV["SEARCHD"]
-    start_searchd
-  end
-
-  after(:all) { stop_searchd }
+  include_context "oedipus test rig"
+  include_context "oedipus posts_rt"
 
   before(:each) do
     Post.destroy!
     User.destroy!
-    empty_indexes
   end
 
-  let(:conn) do
-    Oedipus::Connection.new(searchd_host)
-  end
+  let(:conn) { connection }
 
   let(:index) do
     Oedipus::DataMapper::Index.new(Post, name: :posts_rt, connection: conn) do |idx|
